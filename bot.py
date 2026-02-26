@@ -1,6 +1,5 @@
 import os
 import sqlite3
-import json
 import logging
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -200,10 +199,22 @@ async def stats_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
-    data = json.loads(query.data)
-    log_response(data["id"], data["name"], data["status"], data["at"])
+    try:
+        parts = query.data.split("|")
+        if len(parts) != 3:
+            raise ValueError("unexpected callback format")
+        task_id, status, epoch = int(parts[0]), parts[1], int(parts[2])
+        scheduled_at = datetime.fromtimestamp(epoch, tz=IST).isoformat()
+    except (ValueError, OSError) as exc:
+        logger.warning("button_handler: invalid callback data %r: %s", query.data, exc)
+        return
+    conn = get_db()
+    row = conn.execute("SELECT name FROM tasks WHERE id=?", (task_id,)).fetchone()
+    conn.close()
+    task_name = row["name"] if row else "Unknown"
+    log_response(task_id, task_name, status, scheduled_at)
     labels = {"done": "Done", "skip": "Skipped", "postpone": "Postponed"}
-    await query.edit_message_text(f"{data['name']} - {labels[data['status']]}")
+    await query.edit_message_text(f"{task_name} - {labels[status]}")
 
 # ─── REMINDER JOB ─────────────────────────────────────────────────────────────
 async def reminder_job(context: ContextTypes.DEFAULT_TYPE):
@@ -218,11 +229,11 @@ async def reminder_job(context: ContextTypes.DEFAULT_TYPE):
         key = f"{minute_key}_{t['id']}"
         if key not in sent and should_send_now(t["schedule"]):
             sent.add(key)
-            at = now.isoformat()
+            at = int(now.timestamp())
             kb = InlineKeyboardMarkup([[
-                InlineKeyboardButton("Done",     callback_data=json.dumps({"id": t["id"], "name": t["name"], "status": "done",     "at": at})),
-                InlineKeyboardButton("Skip",     callback_data=json.dumps({"id": t["id"], "name": t["name"], "status": "skip",     "at": at})),
-                InlineKeyboardButton("Postpone", callback_data=json.dumps({"id": t["id"], "name": t["name"], "status": "postpone", "at": at})),
+                InlineKeyboardButton("Done",     callback_data=f"{t['id']}|done|{at}"),
+                InlineKeyboardButton("Skip",     callback_data=f"{t['id']}|skip|{at}"),
+                InlineKeyboardButton("Postpone", callback_data=f"{t['id']}|postpone|{at}"),
             ]])
             await context.bot.send_message(
                 chat_id=int(chat_id),
