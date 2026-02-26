@@ -10,6 +10,7 @@ from telegram.ext import (
 
 # ─── CONFIG ───────────────────────────────────────────────────────────────────
 BOT_TOKEN = os.environ.get("8730515219:AAEQzmPPiJYTL7ST-zcXxSpmsSUz0BDcYGY")
+print(f"DEBUG TOKEN: '{8730515219:AAEQzmPPiJYTL7ST-zcXxSpmsSUz0BDcYGY}'")
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
