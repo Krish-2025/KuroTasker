@@ -533,6 +533,7 @@ async def reminder_job(context: ContextTypes.DEFAULT_TYPE):
     sent      = context.bot_data.setdefault("sent", set())
     now       = datetime.now(IST)
     minute_key = now.strftime("%Y-%m-%d %H:%M")
+    logger.info(f"TICK IST={minute_key} tasks={[t['schedule'] for t in get_tasks()]}")
     chat_id   = get_config("chat_id")
     if not chat_id:
         return
