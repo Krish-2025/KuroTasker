@@ -548,8 +548,7 @@ async def reminder_job(context: ContextTypes.DEFAULT_TYPE):
             ]])
             await context.bot.send_message(
                 chat_id=int(chat_id),
-                text=f"🔔 *{t['name']}*\n_{now.strftime('%I:%M %p IST')}_",
-                parse_mode="Markdown",
+                text=f"🔔 {t['name']}\n{now.strftime('%I:%M %p IST')}",
                 reply_markup=kb
             )
     if len(sent) > 2000:
