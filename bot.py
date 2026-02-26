@@ -413,7 +413,6 @@ def main():
         await telegram_app.start()
         await telegram_app.bot.set_webhook(WEBHOOK_URL)
         logger.info(f"Webhook set to {WEBHOOK_URL}")
-        telegram_app.job_queue.scheduler.start()
         logger.info("Bot started via webhook!")
 
     asyncio.get_event_loop().run_until_complete(setup())
